@@ -13,10 +13,22 @@ migrateup:
 migratedown:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose down
 
+createtestdb:
+	docker exec -it postgres17 createdb --username=root --owner=root simple_bank_test
+	
+droptestdb:
+	docker exec -it postgres17 dropdb simple_bank_test
+
+migratetestup:
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank_test?sslmode=disable" -verbose up
+
+migratetestdown:
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank_test?sslmode=disable" -verbose down
+
 sqlc:
 	sqlc generate
 
 test:
 	go test -v -cover ./...
 
-.PHONY: postgres createdb dropdb migrateup sqlc test
+.PHONY: postgres createdb dropdb migrateup sqlc test createtestdb droptestdb migratetestup migratetestdown
