@@ -44,6 +44,9 @@ jobs:
        sudo mv migrate /usr/bin
        which migrate
 
+    - name: Create test database
+      run: make createtestdb
+
     - name: Run migrations
       run: make migratetestup
 
