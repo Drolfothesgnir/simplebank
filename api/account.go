@@ -2,10 +2,12 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 type CreateAccountRequest struct {
@@ -28,6 +30,19 @@ func (server *Server) createAccount(ctx *gin.Context) {
 
 	account, err := server.store.CreateAccount(ctx, arg)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case "foreign_key_violation":
+				err := fmt.Errorf("cannot create account for user [%s] because this user doesn't exist", arg.Owner)
+				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			case "unique_violation":
+				err := fmt.Errorf("user [%s] already has account with currency [%s]", arg.Owner, arg.Currency)
+				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			}
+		}
+
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
