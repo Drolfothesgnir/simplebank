@@ -33,7 +33,7 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Code.Name() {
 			case "foreign_key_violation":
-				err := fmt.Errorf("cannot create account for user [%s] because this user doesn't exist", arg.Owner)
+				err := fmt.Errorf("cannot create account for user [%s]: user doesn't exist", arg.Owner)
 				ctx.JSON(http.StatusForbidden, errorResponse(err))
 				return
 			case "unique_violation":
@@ -77,7 +77,7 @@ func (server *Server) getAccount(ctx *gin.Context) {
 
 type ListAccountRequest struct {
 	PageID   int32 `form:"page_id" binding:"required,min=1"`
-	PageSize int32 `form:"page_size" binding:"required,min=5,max=5"`
+	PageSize int32 `form:"page_size" binding:"required,min=5,max=20"`
 }
 
 func (server *Server) listAccount(ctx *gin.Context) {
