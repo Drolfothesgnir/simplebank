@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	mockdb "github.com/Drolfothesgnir/simplebank/db/mock"
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
@@ -93,6 +94,7 @@ func TestGetAccountAPI(t *testing.T) {
 
 			url := fmt.Sprintf("/accounts/%d", tc.accountID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
+			setAuthorizationHeader(t, server, "Bearer", "user", time.Minute, request)
 			require.NoError(t, err)
 
 			server.router.ServeHTTP(recorder, request)

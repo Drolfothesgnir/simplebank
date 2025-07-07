@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -26,4 +28,11 @@ func newTestServer(t *testing.T, store db.Store) *Server {
 	server, err := NewServer(config, store)
 	require.NoError(t, err)
 	return server
+}
+
+func setAuthorizationHeader(t *testing.T, server *Server, authorizationType string, username string, duration time.Duration, request *http.Request) {
+	accessToken, err := server.tokenMaker.CreateToken(username, duration)
+	require.NoError(t, err)
+	authorizationToken := fmt.Sprintf("%s %s", authorizationType, accessToken)
+	request.Header.Set(authorizationheaderKey, authorizationToken)
 }
