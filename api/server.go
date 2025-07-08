@@ -51,7 +51,6 @@ func (server *Server) setupRouter() {
 	authGroup.POST("/accounts", server.createAccount)
 	authGroup.GET("/accounts/:id", server.getAccount)
 	authGroup.GET("/accounts", server.listAccount)
-	authGroup.PATCH("/accounts/:id", server.addAccountBalance)
 	authGroup.DELETE("/accounts/:id", server.deleteAccount)
 
 	// transfers

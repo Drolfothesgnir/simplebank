@@ -251,7 +251,7 @@ func (mr *MockStoreMockRecorder) ListTransfers(ctx, arg any) *gomock.Call {
 }
 
 // TransferTx mocks base method.
-func (m *MockStore) TransferTx(ctx context.Context, arg db.CreateTransferParams) (db.TransferTxResult, error) {
+func (m *MockStore) TransferTx(ctx context.Context, arg db.TransferTxParams) (db.TransferTxResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransferTx", ctx, arg)
 	ret0, _ := ret[0].(db.TransferTxResult)

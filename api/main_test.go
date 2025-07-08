@@ -8,6 +8,7 @@ import (
 	"time"
 
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
+	"github.com/Drolfothesgnir/simplebank/token"
 	"github.com/Drolfothesgnir/simplebank/util"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -30,8 +31,8 @@ func newTestServer(t *testing.T, store db.Store) *Server {
 	return server
 }
 
-func setAuthorizationHeader(t *testing.T, server *Server, authorizationType string, username string, duration time.Duration, request *http.Request) {
-	accessToken, err := server.tokenMaker.CreateToken(username, duration)
+func setAuthorizationHeader(t *testing.T, tokenMaker token.Maker, authorizationType string, username string, duration time.Duration, request *http.Request) {
+	accessToken, err := tokenMaker.CreateToken(username, duration)
 	require.NoError(t, err)
 	authorizationToken := fmt.Sprintf("%s %s", authorizationType, accessToken)
 	request.Header.Set(authorizationheaderKey, authorizationToken)

@@ -19,7 +19,7 @@ import (
 )
 
 func TestGetAccountAPI(t *testing.T) {
-	account := createRandomAccount()
+	account := createRandomAccount(util.RandomOwner())
 
 	testCases := []struct {
 		name          string
@@ -94,7 +94,7 @@ func TestGetAccountAPI(t *testing.T) {
 
 			url := fmt.Sprintf("/accounts/%d", tc.accountID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
-			setAuthorizationHeader(t, server, "Bearer", "user", time.Minute, request)
+			setAuthorizationHeader(t, server.tokenMaker, "Bearer", account.Owner, time.Minute, request)
 			require.NoError(t, err)
 
 			server.router.ServeHTTP(recorder, request)
@@ -104,10 +104,10 @@ func TestGetAccountAPI(t *testing.T) {
 
 }
 
-func createRandomAccount() db.Account {
+func createRandomAccount(owner string) db.Account {
 	return db.Account{
 		ID:       util.RandomInt(1, 1000),
-		Owner:    util.RandomOwner(),
+		Owner:    owner,
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
