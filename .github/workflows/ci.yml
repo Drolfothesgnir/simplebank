@@ -48,7 +48,8 @@ jobs:
       run: make migratetestup
 
     - name: Create .env file with heredoc
-      run: cat << EOF > app.env
+      run: |
+        cat << EOF > app.env
         DB_DRIVER=postgres
         DB_SOURCE=postgresql://root:secret@localhost:5432/simple_bank_test?sslmode=disable
         DB_SOURCE_TEST=postgresql://root:secret@localhost:5432/simple_bank_test?sslmode=disable
