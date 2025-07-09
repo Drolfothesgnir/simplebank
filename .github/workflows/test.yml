@@ -45,14 +45,13 @@ jobs:
        which migrate
 
     - name: Run migrations
-      run: make migratetestup
+      run: make migrateup
 
     - name: Create .env file with heredoc
       run: |
         cat << EOF > app.env
         DB_DRIVER=postgres
         DB_SOURCE=postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable
-        DB_SOURCE_TEST=postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable
         SERVER_ADDRESS=0.0.0.0:8080
         TOKEN_SYMMETRIC_KEY=${{ secrets.TOKEN_SYMMETRIC_KEY }}
         ACCESS_TOKEN_DURATION=15m
