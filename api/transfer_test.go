@@ -31,6 +31,7 @@ func TestCreateTransfer(t *testing.T) {
 
 	account1.Currency = util.USD
 	account2.Currency = util.USD
+	account3.Currency = util.CAD
 
 	testCases := []struct {
 		name          string
