@@ -31,15 +31,8 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Create .env file with heredoc
-        run: |
-          cat << EOF > app.env
-          DB_DRIVER=postgres
-          DB_SOURCE=postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable
-          SERVER_ADDRESS=0.0.0.0:8080
-          TOKEN_SYMMETRIC_KEY=${{ secrets.TOKEN_SYMMETRIC_KEY }}
-          ACCESS_TOKEN_DURATION=15m
-          EOF
+      - name: Load AWS secrets and save to app.env
+        run: aws secretsmanager get-secret-value --secret-id simple_bank --query SecretString --output text | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > app.env
 
       - name: Verify app.env file
         run: cat app.env
