@@ -32,8 +32,9 @@ func newTestServer(t *testing.T, store db.Store) *Server {
 }
 
 func setAuthorizationHeader(t *testing.T, tokenMaker token.Maker, authorizationType string, username string, duration time.Duration, request *http.Request) {
-	accessToken, err := tokenMaker.CreateToken(username, duration)
+	accessToken, payload, err := tokenMaker.CreateToken(username, duration)
 	require.NoError(t, err)
+	require.NotEmpty(t, payload)
 	authorizationToken := fmt.Sprintf("%s %s", authorizationType, accessToken)
 	request.Header.Set(authorizationheaderKey, authorizationToken)
 }
