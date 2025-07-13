@@ -57,9 +57,6 @@ func (server *Server) setupRouter() {
 	// transfers
 	authGroup.POST("/transfers", server.createTransfer)
 
-	// users auth
-	authGroup.GET("/users/:username", server.getUser)
-
 	server.router = router
 }
 
