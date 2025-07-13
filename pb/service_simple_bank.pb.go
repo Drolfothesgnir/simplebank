@@ -28,7 +28,7 @@ const file_service_simple_bank_proto_rawDesc = "" +
 	"\n" +
 	"SimpleBank\x12=\n" +
 	"\n" +
-	"Createuser\x12\x15.pb.CreateUserRequest\x1a\x16.pb.CreateUserResponse\"\x00\x12:\n" +
+	"CreateUser\x12\x15.pb.CreateUserRequest\x1a\x16.pb.CreateUserResponse\"\x00\x12:\n" +
 	"\tLoginUser\x12\x14.pb.LoginUserRequest\x1a\x15.pb.LoginUserResponse\"\x00B)Z'github.com/Drolfothesgnir/simplebank/pbb\x06proto3"
 
 var file_service_simple_bank_proto_goTypes = []any{
@@ -38,9 +38,9 @@ var file_service_simple_bank_proto_goTypes = []any{
 	(*LoginUserResponse)(nil),  // 3: pb.LoginUserResponse
 }
 var file_service_simple_bank_proto_depIdxs = []int32{
-	0, // 0: pb.SimpleBank.Createuser:input_type -> pb.CreateUserRequest
+	0, // 0: pb.SimpleBank.CreateUser:input_type -> pb.CreateUserRequest
 	1, // 1: pb.SimpleBank.LoginUser:input_type -> pb.LoginUserRequest
-	2, // 2: pb.SimpleBank.Createuser:output_type -> pb.CreateUserResponse
+	2, // 2: pb.SimpleBank.CreateUser:output_type -> pb.CreateUserResponse
 	3, // 3: pb.SimpleBank.LoginUser:output_type -> pb.LoginUserResponse
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
