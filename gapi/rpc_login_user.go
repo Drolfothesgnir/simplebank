@@ -8,7 +8,6 @@ import (
 	"github.com/Drolfothesgnir/simplebank/pb"
 	"github.com/Drolfothesgnir/simplebank/util"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -39,17 +38,14 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		return nil, status.Error(codes.Internal, "failed to create refresh token")
 	}
 
-	p, ok := peer.FromContext(ctx)
-	if !ok {
-		return nil, status.Error(codes.Internal, "failed to access context")
-	}
+	mtdt := server.extractMetadata(ctx)
 
 	sessionParams := db.CreateSessionParams{
 		ID:           refreshPayload.ID,
 		Username:     user.Username,
 		RefreshToken: refreshToken,
-		UserAgent:    "rpc",
-		ClientIp:     p.Addr.String(),
+		UserAgent:    mtdt.UserAgent,
+		ClientIp:     mtdt.ClientIP,
 		IsBlocked:    false,
 		ExpiresAt:    refreshPayload.ExpiredAt,
 	}
