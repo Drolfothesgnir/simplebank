@@ -23,6 +23,8 @@
   "paths": {
     "/v1/create_user": {
       "post": {
+        "summary": "Create new user",
+        "description": "Use this API to create new user",
         "operationId": "SimpleBank_CreateUser",
         "responses": {
           "200": {
