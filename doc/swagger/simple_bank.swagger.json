@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "Simple Bank",
-    "version": "1.0",
+    "version": "1.1",
     "contact": {
       "name": "Drolfothesgnir",
       "url": "https://github.com/Drolfothesgnir/simplebank",
@@ -21,7 +21,7 @@
     "application/json"
   ],
   "paths": {
-    "/v1/create_user": {
+    "/v1/user": {
       "post": {
         "summary": "Create new user",
         "description": "Use this API to create new user",
@@ -53,10 +53,44 @@
         "tags": [
           "SimpleBank"
         ]
+      },
+      "patch": {
+        "summary": "Update user",
+        "description": "Use this API to update users full name, password or email",
+        "operationId": "SimpleBank_UpdateUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUpdateUserResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbUpdateUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "SimpleBank"
+        ]
       }
     },
-    "/v1/login_user": {
+    "/v1/user/login": {
       "post": {
+        "summary": "Login user",
+        "description": "Use this API to login user and get access token and refresh token",
         "operationId": "SimpleBank_LoginUser",
         "responses": {
           "200": {
@@ -147,6 +181,31 @@
         "refreshTokenExpiresAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "pbUpdateUserRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "fullName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "pbUpdateUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/pbUser"
         }
       }
     },

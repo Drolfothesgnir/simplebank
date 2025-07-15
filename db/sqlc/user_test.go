@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -49,6 +50,53 @@ func TestGetUser(t *testing.T) {
 	require.Equal(t, user1.HashedPassword, user2.HashedPassword)
 	require.Equal(t, user1.FullName, user2.FullName)
 	require.Equal(t, user1.Email, user2.Email)
+	require.WithinDuration(t, user1.PasswordChangedAt, user2.PasswordChangedAt, time.Second)
+	require.WithinDuration(t, user1.CreatedAt, user2.CreatedAt, time.Second)
+}
+
+func TestUpdateUserOnlyEmail(t *testing.T) {
+	user1 := createRandomUser(t)
+
+	email := util.RandomEmail()
+
+	arg := UpdateUserParams{
+		Username: user1.Username,
+		Email:    sql.NullString{String: email, Valid: true},
+	}
+
+	user2, err := testQueries.UpdateUser(context.Background(), arg)
+	require.NoError(t, err)
+	require.Equal(t, user1.Username, user2.Username)
+	require.Equal(t, user1.HashedPassword, user2.HashedPassword)
+	require.Equal(t, user1.FullName, user2.FullName)
+	require.Equal(t, email, user2.Email)
+	require.WithinDuration(t, user1.PasswordChangedAt, user2.PasswordChangedAt, time.Second)
+	require.WithinDuration(t, user1.CreatedAt, user2.CreatedAt, time.Second)
+}
+
+func TestUpdateUserAllFields(t *testing.T) {
+	user1 := createRandomUser(t)
+
+	email := util.RandomEmail()
+	password := util.RandomString(6)
+	fullname := util.RandomOwner()
+
+	hashedPassword, err := util.HashPassword(password)
+	require.NoError(t, err)
+
+	arg := UpdateUserParams{
+		Username:       user1.Username,
+		Email:          sql.NullString{String: email, Valid: true},
+		HashedPassword: sql.NullString{String: hashedPassword, Valid: true},
+		FullName:       sql.NullString{String: fullname, Valid: true},
+	}
+
+	user2, err := testQueries.UpdateUser(context.Background(), arg)
+	require.NoError(t, err)
+	require.Equal(t, user1.Username, user2.Username)
+	require.Equal(t, hashedPassword, user2.HashedPassword)
+	require.Equal(t, fullname, user2.FullName)
+	require.Equal(t, email, user2.Email)
 	require.WithinDuration(t, user1.PasswordChangedAt, user2.PasswordChangedAt, time.Second)
 	require.WithinDuration(t, user1.CreatedAt, user2.CreatedAt, time.Second)
 }
