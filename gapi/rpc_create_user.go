@@ -2,11 +2,14 @@ package gapi
 
 import (
 	"context"
+	"time"
 
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
 	"github.com/Drolfothesgnir/simplebank/pb"
 	"github.com/Drolfothesgnir/simplebank/util"
 	"github.com/Drolfothesgnir/simplebank/val"
+	"github.com/Drolfothesgnir/simplebank/worker"
+	"github.com/hibiken/asynq"
 	"github.com/lib/pq"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
@@ -25,14 +28,31 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		return nil, status.Errorf(codes.Internal, "failed hash password: %s", err)
 	}
 
-	arg := db.CreateUserParams{
+	createUserParams := db.CreateUserParams{
 		Username:       req.GetUsername(),
 		HashedPassword: hashedPassword,
 		FullName:       req.GetFullName(),
 		Email:          req.GetEmail(),
 	}
 
-	user, err := server.store.CreateUser(ctx, arg)
+	cb := func(user db.User) error {
+		payload := &worker.PayloadSendVerifyEmail{Username: user.Username}
+
+		opts := []asynq.Option{
+			asynq.MaxRetry(10),
+			asynq.ProcessIn(10 * time.Second),
+			asynq.Queue(worker.QueueCritical),
+		}
+
+		return server.taskDistributor.DistributeTaskSendVerifyEmail(ctx, payload, opts...)
+	}
+
+	arg := db.CreateUserTxParams{
+		CreateUserParams: createUserParams,
+		AfterCreate:      cb,
+	}
+
+	txresult, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Code.Name() == "unique_violation" {
@@ -46,10 +66,10 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 			}
 		}
 
-		return nil, status.Errorf(codes.Internal, "failed to user: %s", err)
+		return nil, status.Errorf(codes.Internal, "failed to create user: %s", err)
 	}
 
-	return &pb.CreateUserResponse{User: convertUser(user)}, nil
+	return &pb.CreateUserResponse{User: convertUser(txresult.User)}, nil
 }
 
 func validateCreateUserRequest(req *pb.CreateUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
