@@ -31,6 +31,8 @@ import (
 )
 
 func main() {
+	worker.SetupRedisLogger()
+
 	config, err := util.LoadConfig(".")
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot read config file")
