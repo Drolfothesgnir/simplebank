@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
+	"github.com/Drolfothesgnir/simplebank/util"
 	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog/log"
 )
@@ -62,7 +64,36 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 		return fmt.Errorf("failed to retrieve user information: %w", err)
 	}
 
-	// TODO: email sending
+	verificationEmail, err := processor.store.CreateVerificationEmail(ctx, db.CreateVerificationEmailParams{
+		Username:   user.Username,
+		Email:      user.Email,
+		SecterCode: util.RandomString(32),
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to create verification email: %w", err)
+	}
+
+	err = processor.emailSender.SendEmail(
+		"Email verification",
+		fmt.Sprintf(`
+			<html>
+				<body>
+					<h1>You need to verify your email address to complete registration</h1>
+					<h3>Your code is <strong>%s</strong></h3>
+					<p>follow this link to enter the code and finish regisration:</p>
+					<p><a href="https://google.com">Enter code here</a></p>
+				</body>
+			</html>
+		`, verificationEmail.SecterCode),
+		[]string{verificationEmail.Email},
+		nil, nil, nil,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to send verification email: %w", err)
+	}
+
 	log.Info().Str("type", task.Type()).Str("user", payload.Username).Str("email", user.Email).Msg("Sending email")
 
 	return nil
