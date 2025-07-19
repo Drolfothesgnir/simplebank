@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
+	"github.com/Drolfothesgnir/simplebank/mail"
 	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog/log"
 )
@@ -20,8 +21,9 @@ type TaskProcessor interface {
 }
 
 type RedisTaskProcessor struct {
-	server *asynq.Server
-	store  db.Store
+	server      *asynq.Server
+	store       db.Store
+	emailSender mail.EmailSender
 }
 
 func reportError(ctx context.Context, task *asynq.Task, err error) {
@@ -36,7 +38,7 @@ func reportError(ctx context.Context, task *asynq.Task, err error) {
 		Msg("task failed")
 }
 
-func NewRedisTaskProcessor(clientOpt asynq.RedisClientOpt, store db.Store) TaskProcessor {
+func NewRedisTaskProcessor(clientOpt asynq.RedisClientOpt, store db.Store, emailSender mail.EmailSender) TaskProcessor {
 	server := asynq.NewServer(clientOpt, asynq.Config{
 		Queues: map[string]int{
 			QueueCritical: 10,
@@ -46,8 +48,9 @@ func NewRedisTaskProcessor(clientOpt asynq.RedisClientOpt, store db.Store) TaskP
 		Logger:       NewLogger(),
 	})
 	return &RedisTaskProcessor{
-		server: server,
-		store:  store,
+		server:      server,
+		store:       store,
+		emailSender: emailSender,
 	}
 }
 

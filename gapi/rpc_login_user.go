@@ -76,11 +76,11 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 }
 
 func validateLoginUserRequest(req *pb.LoginUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
-	if err := val.ValidUsername(req.GetUsername()); err != nil {
+	if err := val.ValidateUsername(req.GetUsername()); err != nil {
 		violations = append(violations, fieldViolation("username", err))
 	}
 
-	if err := val.ValidPassword(req.GetPassword()); err != nil {
+	if err := val.ValidatePassword(req.GetPassword()); err != nil {
 		violations = append(violations, fieldViolation("password", err))
 	}
 

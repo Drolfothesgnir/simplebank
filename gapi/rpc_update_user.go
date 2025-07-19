@@ -67,24 +67,24 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 }
 
 func validateUpdateUserRequest(req *pb.UpdateUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
-	if err := val.ValidUsername(req.GetUsername()); err != nil {
+	if err := val.ValidateUsername(req.GetUsername()); err != nil {
 		violations = append(violations, fieldViolation("username", err))
 	}
 
 	if req.Password != nil {
-		if err := val.ValidPassword(*req.Password); err != nil {
+		if err := val.ValidatePassword(*req.Password); err != nil {
 			violations = append(violations, fieldViolation("password", err))
 		}
 	}
 
 	if req.FullName != nil {
-		if err := val.ValidFullName(*req.FullName); err != nil {
+		if err := val.ValidateFullName(*req.FullName); err != nil {
 			violations = append(violations, fieldViolation("full_name", err))
 		}
 	}
 
 	if req.Email != nil {
-		if err := val.ValidEmail(*req.Email); err != nil {
+		if err := val.ValidateEmail(*req.Email); err != nil {
 			violations = append(violations, fieldViolation("email", err))
 		}
 	}

@@ -22,7 +22,7 @@ var (
 	isValidFullName = regexp.MustCompile(`^[a-zA-Z\s]+$`).MatchString
 )
 
-func ValidStringLength(value string, minLength int, maxLength int) error {
+func ValidateStringLength(value string, minLength int, maxLength int) error {
 	n := len(value)
 	if n < minLength || n > maxLength {
 		return fmt.Errorf("invalid input length: must contain between %d-%d characters", minLength, maxLength)
@@ -31,8 +31,8 @@ func ValidStringLength(value string, minLength int, maxLength int) error {
 	return nil
 }
 
-func ValidUsername(value string) error {
-	if err := ValidStringLength(value, USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH); err != nil {
+func ValidateUsername(value string) error {
+	if err := ValidateStringLength(value, USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH); err != nil {
 		return err
 	}
 
@@ -43,12 +43,12 @@ func ValidUsername(value string) error {
 	return nil
 }
 
-func ValidPassword(value string) error {
-	return ValidStringLength(value, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH)
+func ValidatePassword(value string) error {
+	return ValidateStringLength(value, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH)
 }
 
-func ValidEmail(value string) error {
-	if err := ValidStringLength(value, EMAIL_MIN_LENGTH, EMAIL_MAX_LENGTH); err != nil {
+func ValidateEmail(value string) error {
+	if err := ValidateStringLength(value, EMAIL_MIN_LENGTH, EMAIL_MAX_LENGTH); err != nil {
 		return err
 	}
 
@@ -59,8 +59,8 @@ func ValidEmail(value string) error {
 	return nil
 }
 
-func ValidFullName(value string) error {
-	if err := ValidStringLength(value, FULL_NAME_MIN_LENGTH, FULL_NAME_MAX_LENGTH); err != nil {
+func ValidateFullName(value string) error {
+	if err := ValidateStringLength(value, FULL_NAME_MIN_LENGTH, FULL_NAME_MAX_LENGTH); err != nil {
 		return err
 	}
 
@@ -69,4 +69,16 @@ func ValidFullName(value string) error {
 	}
 
 	return nil
+}
+
+func ValidateEmailID(value int64) error {
+	if value <= 0 {
+		return fmt.Errorf("must be a positive integer")
+	}
+
+	return nil
+}
+
+func ValidateSecretCode(value string) error {
+	return ValidateStringLength(value, 32, 128)
 }
