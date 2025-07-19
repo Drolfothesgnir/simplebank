@@ -1,6 +1,6 @@
 -- SQL dump generated using DBML (dbml.dbdiagram.io)
 -- Database: PostgreSQL
--- Generated at: 2025-07-18T13:45:31.101Z
+-- Generated at: 2025-07-19T06:36:20.537Z
 
 CREATE TABLE "sessions" (
   "id" uuid PRIMARY KEY,
@@ -27,7 +27,7 @@ CREATE TABLE "verification_emails" (
   "id" bigserial PRIMARY KEY,
   "username" varchar NOT NULL,
   "email" varchar NOT NULL,
-  "secter_code" varchar NOT NULL,
+  "secret_code" varchar NOT NULL,
   "is_used" bool NOT NULL DEFAULT false,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "expired_at" timestamptz NOT NULL DEFAULT (now() + interval '15 minutes')

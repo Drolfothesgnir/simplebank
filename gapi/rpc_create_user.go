@@ -52,7 +52,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		AfterCreate:      cb,
 	}
 
-	txresult, err := server.store.CreateUserTx(ctx, arg)
+	txResult, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Code.Name() == "unique_violation" {
@@ -69,23 +69,23 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		return nil, status.Errorf(codes.Internal, "failed to create user: %s", err)
 	}
 
-	return &pb.CreateUserResponse{User: convertUser(txresult.User)}, nil
+	return &pb.CreateUserResponse{User: convertUser(txResult.User)}, nil
 }
 
 func validateCreateUserRequest(req *pb.CreateUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
-	if err := val.ValidUsername(req.GetUsername()); err != nil {
+	if err := val.ValidateUsername(req.GetUsername()); err != nil {
 		violations = append(violations, fieldViolation("username", err))
 	}
 
-	if err := val.ValidPassword(req.GetPassword()); err != nil {
+	if err := val.ValidatePassword(req.GetPassword()); err != nil {
 		violations = append(violations, fieldViolation("password", err))
 	}
 
-	if err := val.ValidFullName(req.GetFullName()); err != nil {
+	if err := val.ValidateFullName(req.GetFullName()); err != nil {
 		violations = append(violations, fieldViolation("full_name", err))
 	}
 
-	if err := val.ValidEmail(req.GetEmail()); err != nil {
+	if err := val.ValidateEmail(req.GetEmail()); err != nil {
 		violations = append(violations, fieldViolation("email", err))
 	}
 

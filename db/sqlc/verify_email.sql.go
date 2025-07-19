@@ -7,32 +7,83 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createVerificationEmail = `-- name: CreateVerificationEmail :one
 INSERT INTO verification_emails (
   username,
   email,
-  secter_code
+  secret_code
 ) VALUES (
   $1, $2, $3
-) RETURNING id, username, email, secter_code, is_used, created_at, expired_at
+) RETURNING id, username, email, secret_code, is_used, created_at, expired_at
 `
 
 type CreateVerificationEmailParams struct {
 	Username   string `json:"username"`
 	Email      string `json:"email"`
-	SecterCode string `json:"secter_code"`
+	SecretCode string `json:"secret_code"`
 }
 
 func (q *Queries) CreateVerificationEmail(ctx context.Context, arg CreateVerificationEmailParams) (VerificationEmail, error) {
-	row := q.db.QueryRowContext(ctx, createVerificationEmail, arg.Username, arg.Email, arg.SecterCode)
+	row := q.db.QueryRowContext(ctx, createVerificationEmail, arg.Username, arg.Email, arg.SecretCode)
 	var i VerificationEmail
 	err := row.Scan(
 		&i.ID,
 		&i.Username,
 		&i.Email,
-		&i.SecterCode,
+		&i.SecretCode,
+		&i.IsUsed,
+		&i.CreatedAt,
+		&i.ExpiredAt,
+	)
+	return i, err
+}
+
+const getVerificationEmail = `-- name: GetVerificationEmail :one
+SELECT id, username, email, secret_code, is_used, created_at, expired_at FROM verification_emails
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetVerificationEmail(ctx context.Context, id int64) (VerificationEmail, error) {
+	row := q.db.QueryRowContext(ctx, getVerificationEmail, id)
+	var i VerificationEmail
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.SecretCode,
+		&i.IsUsed,
+		&i.CreatedAt,
+		&i.ExpiredAt,
+	)
+	return i, err
+}
+
+const updateVerificationEmail = `-- name: UpdateVerificationEmail :one
+UPDATE verification_emails
+SET 
+  email = COALESCE($2, email),
+  is_used = COALESCE($3, is_used)
+WHERE id = $1
+RETURNING id, username, email, secret_code, is_used, created_at, expired_at
+`
+
+type UpdateVerificationEmailParams struct {
+	ID     int64          `json:"id"`
+	Email  sql.NullString `json:"email"`
+	IsUsed sql.NullBool   `json:"is_used"`
+}
+
+func (q *Queries) UpdateVerificationEmail(ctx context.Context, arg UpdateVerificationEmailParams) (VerificationEmail, error) {
+	row := q.db.QueryRowContext(ctx, updateVerificationEmail, arg.ID, arg.Email, arg.IsUsed)
+	var i VerificationEmail
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.SecretCode,
 		&i.IsUsed,
 		&i.CreatedAt,
 		&i.ExpiredAt,

@@ -67,25 +67,27 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 	verificationEmail, err := processor.store.CreateVerificationEmail(ctx, db.CreateVerificationEmailParams{
 		Username:   user.Username,
 		Email:      user.Email,
-		SecterCode: util.RandomString(32),
+		SecretCode: util.RandomString(32),
 	})
 
 	if err != nil {
 		return fmt.Errorf("failed to create verification email: %w", err)
 	}
 
+	subject := "Welcome to Simple Bank!"
+	verificationUrl := fmt.Sprintf(
+		"http://localhost:8080/v1/verify_email?email_id=%d&secret_code=%s",
+		verificationEmail.ID,
+		verificationEmail.SecretCode,
+	)
+
 	err = processor.emailSender.SendEmail(
-		"Email verification",
+		subject,
 		fmt.Sprintf(`
-			<html>
-				<body>
-					<h1>You need to verify your email address to complete registration</h1>
-					<h3>Your code is <strong>%s</strong></h3>
-					<p>follow this link to enter the code and finish regisration:</p>
-					<p><a href="https://google.com">Enter code here</a></p>
-				</body>
-			</html>
-		`, verificationEmail.SecterCode),
+			Hello %s, <br/>
+			Thank you for joining us!<br/>
+			Please <a href="%s">click here</a> to verify your email address.<br/>
+		`, user.FullName, verificationUrl),
 		[]string{verificationEmail.Email},
 		nil, nil, nil,
 	)
