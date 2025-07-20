@@ -53,7 +53,7 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
-			if pgErr.Code == "23505" && pgErr.ConstraintName == "users_email_key" {
+			if pgErr.Code == db.UniqueViolation && pgErr.ConstraintName == "users_email_key" {
 				return nil, status.Errorf(codes.AlreadyExists, "email [%s] already exists", arg.Email.String)
 			}
 		}

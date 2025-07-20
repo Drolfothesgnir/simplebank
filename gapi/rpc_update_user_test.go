@@ -176,7 +176,7 @@ func TestUpdateUser(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				err := &pgconn.PgError{
-					Code:           "23505",
+					Code:           db.UniqueViolation,
 					ConstraintName: "users_email_key",
 				}
 

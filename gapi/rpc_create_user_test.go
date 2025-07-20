@@ -220,7 +220,7 @@ func TestCreateUser(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
 				err := &pgconn.PgError{
-					Code:           "23505",
+					Code:           db.UniqueViolation,
 					ConstraintName: "users_pkey",
 				}
 				store.EXPECT().CreateUserTx(gomock.Any(), gomock.Any()).Times(1).Return(db.CreateUserTxResult{}, err)
@@ -242,7 +242,7 @@ func TestCreateUser(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
 				pgErr := &pgconn.PgError{
-					Code:           "23505",
+					Code:           db.UniqueViolation,
 					ConstraintName: "users_email_key",
 				}
 				store.EXPECT().CreateUserTx(gomock.Any(), gomock.Any()).Times(1).Return(db.CreateUserTxResult{}, pgErr)
