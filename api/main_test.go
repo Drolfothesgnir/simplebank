@@ -11,7 +11,6 @@ import (
 	"github.com/Drolfothesgnir/simplebank/token"
 	"github.com/Drolfothesgnir/simplebank/util"
 	"github.com/gin-gonic/gin"
-	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 

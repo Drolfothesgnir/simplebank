@@ -14,7 +14,7 @@ import (
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
 	"github.com/Drolfothesgnir/simplebank/util"
 	"github.com/gin-gonic/gin"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -160,9 +160,9 @@ func TestCreateUser(t *testing.T) {
 				"email":     user.Email,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				err := &pq.Error{
-					Code:       "23505",
-					Constraint: "users_pkey",
+				err := &pgconn.PgError{
+					Code:           "23505",
+					ConstraintName: "users_pkey",
 				}
 				store.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Times(1).Return(db.User{}, err)
 			},
@@ -178,9 +178,9 @@ func TestCreateUser(t *testing.T) {
 				"email":     user.Email,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				err := &pq.Error{
-					Code:       "23505",
-					Constraint: "users_email_key",
+				err := &pgconn.PgError{
+					Code:           "23505",
+					ConstraintName: "users_email_key",
 				}
 				store.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Times(1).Return(db.User{}, err)
 			},
@@ -268,7 +268,7 @@ func TestLoginUser(t *testing.T) {
 				"password": password,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().GetUser(gomock.Any(), gomock.Eq(user.Username)).Times(1).Return(db.User{}, sql.ErrNoRows)
+				store.EXPECT().GetUser(gomock.Any(), gomock.Eq(user.Username)).Times(1).Return(db.User{}, db.ErrRecordNotFound)
 				store.EXPECT().CreateSession(gomock.Any(), gomock.Any()).Times(0)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {

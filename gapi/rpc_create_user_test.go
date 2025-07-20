@@ -13,7 +13,7 @@ import (
 	"github.com/Drolfothesgnir/simplebank/util"
 	"github.com/Drolfothesgnir/simplebank/worker"
 	mockwk "github.com/Drolfothesgnir/simplebank/worker/mock"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
@@ -219,9 +219,9 @@ func TestCreateUser(t *testing.T) {
 				Password: password,
 			},
 			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
-				err := &pq.Error{
-					Code:       "23505",
-					Constraint: "users_pkey",
+				err := &pgconn.PgError{
+					Code:           "23505",
+					ConstraintName: "users_pkey",
 				}
 				store.EXPECT().CreateUserTx(gomock.Any(), gomock.Any()).Times(1).Return(db.CreateUserTxResult{}, err)
 				taskDistributor.EXPECT().DistributeTaskSendVerifyEmail(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
@@ -241,11 +241,11 @@ func TestCreateUser(t *testing.T) {
 				Password: password,
 			},
 			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
-				err := &pq.Error{
-					Code:       "23505",
-					Constraint: "users_email_key",
+				pgErr := &pgconn.PgError{
+					Code:           "23505",
+					ConstraintName: "users_email_key",
 				}
-				store.EXPECT().CreateUserTx(gomock.Any(), gomock.Any()).Times(1).Return(db.CreateUserTxResult{}, err)
+				store.EXPECT().CreateUserTx(gomock.Any(), gomock.Any()).Times(1).Return(db.CreateUserTxResult{}, pgErr)
 				taskDistributor.EXPECT().DistributeTaskSendVerifyEmail(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
 			checkResponse: func(t *testing.T, res *pb.CreateUserResponse, err error) {

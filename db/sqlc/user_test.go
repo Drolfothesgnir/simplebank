@@ -2,11 +2,11 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/Drolfothesgnir/simplebank/util"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +21,7 @@ func createRandomUser(t *testing.T) User {
 		Email:          util.RandomEmail(),
 	}
 
-	user, err := testQueries.CreateUser(context.Background(), arg)
+	user, err := testStore.CreateUser(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
 
@@ -42,7 +42,7 @@ func TestCreateUser(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	user1 := createRandomUser(t)
 
-	user2, err := testQueries.GetUser(context.Background(), user1.Username)
+	user2, err := testStore.GetUser(context.Background(), user1.Username)
 	require.NoError(t, err)
 	require.NotEmpty(t, user2)
 
@@ -61,10 +61,10 @@ func TestUpdateUserOnlyEmail(t *testing.T) {
 
 	arg := UpdateUserParams{
 		Username: user1.Username,
-		Email:    sql.NullString{String: email, Valid: true},
+		Email:    pgtype.Text{String: email, Valid: true},
 	}
 
-	user2, err := testQueries.UpdateUser(context.Background(), arg)
+	user2, err := testStore.UpdateUser(context.Background(), arg)
 	require.NoError(t, err)
 	require.Equal(t, user1.Username, user2.Username)
 	require.Equal(t, user1.HashedPassword, user2.HashedPassword)
@@ -86,12 +86,12 @@ func TestUpdateUserAllFields(t *testing.T) {
 
 	arg := UpdateUserParams{
 		Username:       user1.Username,
-		Email:          sql.NullString{String: email, Valid: true},
-		HashedPassword: sql.NullString{String: hashedPassword, Valid: true},
-		FullName:       sql.NullString{String: fullname, Valid: true},
+		Email:          pgtype.Text{String: email, Valid: true},
+		HashedPassword: pgtype.Text{String: hashedPassword, Valid: true},
+		FullName:       pgtype.Text{String: fullname, Valid: true},
 	}
 
-	user2, err := testQueries.UpdateUser(context.Background(), arg)
+	user2, err := testStore.UpdateUser(context.Background(), arg)
 	require.NoError(t, err)
 	require.Equal(t, user1.Username, user2.Username)
 	require.Equal(t, hashedPassword, user2.HashedPassword)

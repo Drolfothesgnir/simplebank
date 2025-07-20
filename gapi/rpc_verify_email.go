@@ -2,7 +2,6 @@ package gapi
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
@@ -22,7 +21,7 @@ func (server *Server) VerifyEmail(ctx context.Context, req *pb.VerifyEmailReques
 
 	email, err := server.store.GetVerificationEmail(ctx, req.GetEmailId())
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == db.ErrRecordNotFound {
 			return nil, status.Errorf(codes.NotFound, "verification email not found")
 		}
 
