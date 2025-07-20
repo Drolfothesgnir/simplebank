@@ -2,6 +2,7 @@ package gapi
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
@@ -10,7 +11,7 @@ import (
 	"github.com/Drolfothesgnir/simplebank/val"
 	"github.com/Drolfothesgnir/simplebank/worker"
 	"github.com/hibiken/asynq"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -54,9 +55,10 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 
 	txResult, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Code.Name() == "unique_violation" {
-				switch pqErr.Constraint {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				switch pgErr.ConstraintName {
 				case "users_pkey":
 					return nil, status.Errorf(codes.AlreadyExists, "user [%s] already exists", arg.Username)
 				case "users_email_key":
