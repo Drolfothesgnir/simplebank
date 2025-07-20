@@ -26,7 +26,7 @@ var File_service_simple_bank_proto protoreflect.FileDescriptor
 
 const file_service_simple_bank_proto_rawDesc = "" +
 	"\n" +
-	"\x19service_simple_bank.proto\x12\x02pb\x1a\x1cgoogle/api/annotations.proto\x1a\x15rpc_create_user.proto\x1a\x14rpc_login_user.proto\x1a\x15rpc_update_user.proto\x1a\x16rpc_verify_email.proto\x1a.protoc-gen-openapiv2/options/annotations.proto2\xf9\x04\n" +
+	"\x19service_simple_bank.proto\x12\x02pb\x1a\x1cgoogle/api/annotations.proto\x1a\x15rpc_create_user.proto\x1a\x14rpc_login_user.proto\x1a\x15rpc_update_user.proto\x1a\x16rpc_verify_email.proto\x1a.protoc-gen-openapiv2/options/annotations.proto2\x81\x05\n" +
 	"\n" +
 	"SimpleBank\x12\x85\x01\n" +
 	"\n" +
@@ -34,8 +34,8 @@ const file_service_simple_bank_proto_rawDesc = "" +
 	"\tLoginUser\x12\x14.pb.LoginUserRequest\x1a\x15.pb.LoginUserResponse\"k\x92AO\x12\n" +
 	"Login user\x1aAUse this API to login user and get access token and refresh token\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/user/login\x12\x9b\x01\n" +
 	"\n" +
-	"UpdateUser\x12\x15.pb.UpdateUserRequest\x1a\x16.pb.UpdateUserResponse\"^\x92AH\x12\vUpdate user\x1a9Use this API to update users full name, password or email\x82\xd3\xe4\x93\x02\r:\x01*2\b/v1/user\x12\x9c\x01\n" +
-	"\vVerifyEmail\x12\x16.pb.VerifyEmailRequest\x1a\x17.pb.VerifyEmailResponse\"\\\x92AA\x12\fVerify email\x1a1Use this API to verify newly created user's email\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/verify_emailB\x9a\x01\x92An\x12l\n" +
+	"UpdateUser\x12\x15.pb.UpdateUserRequest\x1a\x16.pb.UpdateUserResponse\"^\x92AH\x12\vUpdate user\x1a9Use this API to update users full name, password or email\x82\xd3\xe4\x93\x02\r:\x01*2\b/v1/user\x12\xa4\x01\n" +
+	"\vVerifyEmail\x12\x16.pb.VerifyEmailRequest\x1a\x17.pb.VerifyEmailResponse\"d\x92AI\x12\fVerify email\x1a9Use this API to verify newly created user's email address\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/verify_emailB\x9a\x01\x92An\x12l\n" +
 	"\vSimple Bank\"X\n" +
 	"\x0eDrolfothesgnir\x12,https://github.com/Drolfothesgnir/simplebank\x1a\x18kyryl.yeletsky@gmail.com2\x031.1Z'github.com/Drolfothesgnir/simplebank/pbb\x06proto3"
 

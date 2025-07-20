@@ -124,7 +124,7 @@
     "/v1/verify_email": {
       "get": {
         "summary": "Verify email",
-        "description": "Use this API to verify newly created user's email",
+        "description": "Use this API to verify newly created user's email address",
         "operationId": "SimpleBank_VerifyEmail",
         "responses": {
           "200": {

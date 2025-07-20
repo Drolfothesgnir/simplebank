@@ -60,5 +60,8 @@ jobs:
     - name: Verify app.env file
       run: cat app.env
 
+    - name: "Generate statik files"
+      run: make proto
+
     - name: Test
       run: make test
