@@ -34,12 +34,12 @@ func (server *Server) createAccount(ctx *gin.Context) {
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
-			switch pgErr.ConstraintName {
-			case "foreign_key_violation":
+			switch pgErr.Code {
+			case db.ForeignKeyViolation:
 				err := fmt.Errorf("cannot create account for user [%s]: user doesn't exist", arg.Owner)
 				ctx.JSON(http.StatusForbidden, errorResponse(err))
 				return
-			case "unique_violation":
+			case db.UniqueViolation:
 				err := fmt.Errorf("user [%s] already has account with currency [%s]", arg.Owner, arg.Currency)
 				ctx.JSON(http.StatusForbidden, errorResponse(err))
 				return

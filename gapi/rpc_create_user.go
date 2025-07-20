@@ -57,7 +57,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
-			if pgErr.Code == "23505" {
+			if pgErr.Code == db.UniqueViolation {
 				switch pgErr.ConstraintName {
 				case "users_pkey":
 					return nil, status.Errorf(codes.AlreadyExists, "user [%s] already exists", arg.Username)
