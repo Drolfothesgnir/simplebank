@@ -94,7 +94,7 @@ func TestGetAccountAPI(t *testing.T) {
 
 			url := fmt.Sprintf("/accounts/%d", tc.accountID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
-			setAuthorizationHeader(t, server.tokenMaker, "Bearer", account.Owner, time.Minute, request)
+			setAuthorizationHeader(t, server.tokenMaker, "Bearer", account.Owner, util.DepositorRole, time.Minute, request)
 			require.NoError(t, err)
 
 			server.router.ServeHTTP(recorder, request)
