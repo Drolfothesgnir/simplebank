@@ -19,7 +19,6 @@ import (
 func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
 
 	accessibleRoles := []string{util.DepositorRole, util.BankerRole}
-	// TODO: proper role handling
 	authPayload, err := server.authorizeUser(ctx, accessibleRoles)
 	if err != nil {
 		return nil, unauthenticatedError(err)

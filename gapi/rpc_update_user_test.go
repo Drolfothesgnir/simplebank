@@ -85,7 +85,37 @@ func TestUpdateUser(t *testing.T) {
 			},
 		},
 		{
-			name: "WrongUsername",
+			name: "bankerCanUpdateThisUserInfo",
+			body: &pb.UpdateUserRequest{
+				Username: user.Username,
+				FullName: &newUser.FullName,
+				Email:    &newUser.Email,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+
+				arg := db.UpdateUserParams{
+					Username: user.Username,
+					FullName: pgtype.Text{String: newUser.FullName, Valid: true},
+					Email:    pgtype.Text{String: newUser.Email, Valid: true},
+				}
+
+				store.EXPECT().UpdateUser(gomock.Any(), gomock.Eq(arg)).Times(1).Return(newUser, nil)
+
+			},
+			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, newUser.Username, util.BankerRole, time.Minute)
+			},
+			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
+				require.NoError(t, err)
+				require.NotNil(t, res)
+				createdUser := res.GetUser()
+				require.Equal(t, newUser.Username, createdUser.Username)
+				require.Equal(t, newUser.Email, createdUser.Email)
+				require.Equal(t, newUser.FullName, createdUser.FullName)
+			},
+		},
+		{
+			name: "OtherDepositorCannotUpdateThisUserInfo",
 			body: &pb.UpdateUserRequest{
 				Username: "wronguser",
 				FullName: &newUser.FullName,
