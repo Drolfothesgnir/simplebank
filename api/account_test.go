@@ -47,7 +47,7 @@ func TestGetAccountAPI(t *testing.T) {
 				store.EXPECT().
 					GetAccount(gomock.Any(), gomock.Eq(account.ID)).
 					Times(1).
-					Return(db.Account{}, sql.ErrNoRows)
+					Return(db.Account{}, db.ErrRecordNotFound)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)
@@ -78,7 +78,6 @@ func TestGetAccountAPI(t *testing.T) {
 				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
 		},
-		// TODO: add more cases
 	}
 
 	for _, tc := range testCases {
@@ -94,7 +93,7 @@ func TestGetAccountAPI(t *testing.T) {
 
 			url := fmt.Sprintf("/accounts/%d", tc.accountID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
-			setAuthorizationHeader(t, server.tokenMaker, "Bearer", account.Owner, time.Minute, request)
+			setAuthorizationHeader(t, server.tokenMaker, "Bearer", account.Owner, util.DepositorRole, time.Minute, request)
 			require.NoError(t, err)
 
 			server.router.ServeHTTP(recorder, request)

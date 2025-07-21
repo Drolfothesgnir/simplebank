@@ -18,13 +18,15 @@ func TestAuthMiddleware(t *testing.T) {
 
 	testCases := []struct {
 		name          string
+		roles         []string
 		setupAuth     func(t *testing.T, tokenMaker token.Maker) context.Context
 		checkResponse func(t *testing.T, payload *token.Payload, err error)
 	}{
 		{
-			name: "OK",
+			name:  "OK",
+			roles: []string{util.DepositorRole, util.BankerRole},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, username, util.DepositorRole, time.Minute)
 			},
 			checkResponse: func(t *testing.T, payload *token.Payload, err error) {
 				require.NoError(t, err)
@@ -33,7 +35,8 @@ func TestAuthMiddleware(t *testing.T) {
 			},
 		},
 		{
-			name: "MissingMetadata",
+			name:  "MissingMetadata",
+			roles: []string{util.DepositorRole, util.BankerRole},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
 				return context.Background()
 			},
@@ -43,9 +46,10 @@ func TestAuthMiddleware(t *testing.T) {
 			},
 		},
 		{
-			name: "MissingAuthorizationHeader",
+			name:  "MissingAuthorizationHeader",
+			roles: []string{util.DepositorRole, util.BankerRole},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, "invalidHeader", authorizationTypeBearer, username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, "invalidHeader", authorizationTypeBearer, username, util.DepositorRole, time.Minute)
 			},
 			checkResponse: func(t *testing.T, payload *token.Payload, err error) {
 				require.Empty(t, payload)
@@ -53,9 +57,10 @@ func TestAuthMiddleware(t *testing.T) {
 			},
 		},
 		{
-			name: "InvalidAuthHeaderFormat",
+			name:  "InvalidAuthHeaderFormat",
+			roles: []string{util.DepositorRole, util.BankerRole},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, "", username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, "", username, util.DepositorRole, time.Minute)
 			},
 			checkResponse: func(t *testing.T, payload *token.Payload, err error) {
 				require.Empty(t, payload)
@@ -63,9 +68,10 @@ func TestAuthMiddleware(t *testing.T) {
 			},
 		},
 		{
-			name: "UnsupportedAuthorizationType",
+			name:  "UnsupportedAuthorizationType",
+			roles: []string{util.DepositorRole, util.BankerRole},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, "invalidType", username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, "invalidType", username, util.DepositorRole, time.Minute)
 			},
 			checkResponse: func(t *testing.T, payload *token.Payload, err error) {
 				require.Empty(t, payload)
@@ -73,9 +79,21 @@ func TestAuthMiddleware(t *testing.T) {
 			},
 		},
 		{
-			name: "ExpiredToken",
+			name:  "ExpiredToken",
+			roles: []string{util.DepositorRole, util.BankerRole},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, username, -time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, username, util.DepositorRole, -time.Minute)
+			},
+			checkResponse: func(t *testing.T, payload *token.Payload, err error) {
+				require.Empty(t, payload)
+				require.Error(t, err)
+			},
+		},
+		{
+			name:  "PermissionDenied",
+			roles: []string{util.BankerRole},
+			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, username, util.DepositorRole, time.Minute)
 			},
 			checkResponse: func(t *testing.T, payload *token.Payload, err error) {
 				require.Empty(t, payload)
@@ -96,7 +114,7 @@ func TestAuthMiddleware(t *testing.T) {
 			taskDistributor := mockwk.NewMockTaskDistributor(taskCtrl)
 			server := newTestServer(t, store, taskDistributor)
 			ctx := tc.setupAuth(t, server.tokenMaker)
-			payload, err := server.authorizeUser(ctx)
+			payload, err := server.authorizeUser(ctx, tc.roles)
 			tc.checkResponse(t, payload, err)
 		})
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/Drolfothesgnir/simplebank/token"
 	"github.com/Drolfothesgnir/simplebank/util"
 	"github.com/gin-gonic/gin"
-	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,8 +30,8 @@ func newTestServer(t *testing.T, store db.Store) *Server {
 	return server
 }
 
-func setAuthorizationHeader(t *testing.T, tokenMaker token.Maker, authorizationType string, username string, duration time.Duration, request *http.Request) {
-	accessToken, payload, err := tokenMaker.CreateToken(username, duration)
+func setAuthorizationHeader(t *testing.T, tokenMaker token.Maker, authorizationType string, username string, role string, duration time.Duration, request *http.Request) {
+	accessToken, payload, err := tokenMaker.CreateToken(username, role, duration)
 	require.NoError(t, err)
 	require.NotEmpty(t, payload)
 	authorizationToken := fmt.Sprintf("%s %s", authorizationType, accessToken)

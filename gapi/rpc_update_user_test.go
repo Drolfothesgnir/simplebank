@@ -10,7 +10,9 @@ import (
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
 	"github.com/Drolfothesgnir/simplebank/pb"
 	"github.com/Drolfothesgnir/simplebank/token"
-	"github.com/lib/pq"
+	"github.com/Drolfothesgnir/simplebank/util"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
@@ -19,8 +21,8 @@ import (
 
 func TestUpdateUser(t *testing.T) {
 
-	user, _ := createRandomUser(t)
-	newUser, _ := createRandomUser(t)
+	user, _ := createRandomUser(t, util.DepositorRole)
+	newUser, _ := createRandomUser(t, util.DepositorRole)
 	invalidEmail := "invalid-email"
 	invalidFullName := "123"
 
@@ -42,15 +44,15 @@ func TestUpdateUser(t *testing.T) {
 
 				arg := db.UpdateUserParams{
 					Username: user.Username,
-					FullName: sql.NullString{String: newUser.FullName, Valid: true},
-					Email:    sql.NullString{String: newUser.Email, Valid: true},
+					FullName: pgtype.Text{String: newUser.FullName, Valid: true},
+					Email:    pgtype.Text{String: newUser.Email, Valid: true},
 				}
 
 				store.EXPECT().UpdateUser(gomock.Any(), gomock.Eq(arg)).Times(1).Return(newUser, nil)
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.NoError(t, err)
@@ -73,7 +75,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, -time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, -time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -83,7 +85,37 @@ func TestUpdateUser(t *testing.T) {
 			},
 		},
 		{
-			name: "WrongUsername",
+			name: "bankerCanUpdateThisUserInfo",
+			body: &pb.UpdateUserRequest{
+				Username: user.Username,
+				FullName: &newUser.FullName,
+				Email:    &newUser.Email,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+
+				arg := db.UpdateUserParams{
+					Username: user.Username,
+					FullName: pgtype.Text{String: newUser.FullName, Valid: true},
+					Email:    pgtype.Text{String: newUser.Email, Valid: true},
+				}
+
+				store.EXPECT().UpdateUser(gomock.Any(), gomock.Eq(arg)).Times(1).Return(newUser, nil)
+
+			},
+			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, newUser.Username, util.BankerRole, time.Minute)
+			},
+			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
+				require.NoError(t, err)
+				require.NotNil(t, res)
+				createdUser := res.GetUser()
+				require.Equal(t, newUser.Username, createdUser.Username)
+				require.Equal(t, newUser.Email, createdUser.Email)
+				require.Equal(t, newUser.FullName, createdUser.FullName)
+			},
+		},
+		{
+			name: "OtherDepositorCannotUpdateThisUserInfo",
 			body: &pb.UpdateUserRequest{
 				Username: "wronguser",
 				FullName: &newUser.FullName,
@@ -94,7 +126,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -115,7 +147,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, "/.123", time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, "/.123", user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -136,7 +168,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -157,7 +189,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -174,42 +206,16 @@ func TestUpdateUser(t *testing.T) {
 				Email:    &newUser.Email,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				err := &pq.Error{
-					Code:       "23505",
-					Constraint: "users_email_key",
+				err := &pgconn.PgError{
+					Code:           db.UniqueViolation,
+					ConstraintName: "users_email_key",
 				}
 
 				store.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(1).Return(db.User{}, err)
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
-			},
-			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
-				require.Error(t, err)
-				st, ok := status.FromError(err)
-				require.True(t, ok)
-				require.Equal(t, codes.AlreadyExists, st.Code())
-			},
-		},
-		{
-			name: "DuplicateEmail",
-			body: &pb.UpdateUserRequest{
-				Username: user.Username,
-				FullName: &newUser.FullName,
-				Email:    &newUser.Email,
-			},
-			buildStubs: func(store *mockdb.MockStore) {
-				err := &pq.Error{
-					Code:       "23505",
-					Constraint: "users_email_key",
-				}
-
-				store.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(1).Return(db.User{}, err)
-
-			},
-			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -226,11 +232,11 @@ func TestUpdateUser(t *testing.T) {
 				Email:    &newUser.Email,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(1).Return(db.User{}, sql.ErrNoRows)
+				store.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Times(1).Return(db.User{}, db.ErrRecordNotFound)
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -251,7 +257,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)

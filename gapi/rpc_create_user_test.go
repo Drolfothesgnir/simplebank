@@ -13,20 +13,21 @@ import (
 	"github.com/Drolfothesgnir/simplebank/util"
 	"github.com/Drolfothesgnir/simplebank/worker"
 	mockwk "github.com/Drolfothesgnir/simplebank/worker/mock"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func createRandomUser(t *testing.T) (user db.User, password string) {
+func createRandomUser(t *testing.T, role string) (user db.User, password string) {
 	password = util.RandomString(10)
 	hashedPasword, err := util.HashPassword(password)
 	require.NoError(t, err)
 
 	user = db.User{
 		Username:       util.RandomOwner(),
+		Role:           role,
 		HashedPassword: hashedPasword,
 		FullName:       util.RandomOwner(),
 		Email:          util.RandomEmail(),
@@ -73,7 +74,7 @@ func EqCreateUserTxParams(arg db.CreateUserTxParams, password string, user db.Us
 
 func TestCreateUser(t *testing.T) {
 
-	user, password := createRandomUser(t)
+	user, password := createRandomUser(t, util.DepositorRole)
 
 	testCases := []struct {
 		name          string
@@ -219,9 +220,9 @@ func TestCreateUser(t *testing.T) {
 				Password: password,
 			},
 			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
-				err := &pq.Error{
-					Code:       "23505",
-					Constraint: "users_pkey",
+				err := &pgconn.PgError{
+					Code:           db.UniqueViolation,
+					ConstraintName: "users_pkey",
 				}
 				store.EXPECT().CreateUserTx(gomock.Any(), gomock.Any()).Times(1).Return(db.CreateUserTxResult{}, err)
 				taskDistributor.EXPECT().DistributeTaskSendVerifyEmail(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
@@ -241,11 +242,11 @@ func TestCreateUser(t *testing.T) {
 				Password: password,
 			},
 			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
-				err := &pq.Error{
-					Code:       "23505",
-					Constraint: "users_email_key",
+				pgErr := &pgconn.PgError{
+					Code:           db.UniqueViolation,
+					ConstraintName: "users_email_key",
 				}
-				store.EXPECT().CreateUserTx(gomock.Any(), gomock.Any()).Times(1).Return(db.CreateUserTxResult{}, err)
+				store.EXPECT().CreateUserTx(gomock.Any(), gomock.Any()).Times(1).Return(db.CreateUserTxResult{}, pgErr)
 				taskDistributor.EXPECT().DistributeTaskSendVerifyEmail(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
 			checkResponse: func(t *testing.T, res *pb.CreateUserResponse, err error) {

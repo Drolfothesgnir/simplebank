@@ -2,6 +2,7 @@ package gapi
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
@@ -10,7 +11,7 @@ import (
 	"github.com/Drolfothesgnir/simplebank/val"
 	"github.com/Drolfothesgnir/simplebank/worker"
 	"github.com/hibiken/asynq"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -29,7 +30,8 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	}
 
 	createUserParams := db.CreateUserParams{
-		Username:       req.GetUsername(),
+		Username: req.GetUsername(),
+		// Role:           util.DepositorRole, <-- not used
 		HashedPassword: hashedPassword,
 		FullName:       req.GetFullName(),
 		Email:          req.GetEmail(),
@@ -54,9 +56,10 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 
 	txResult, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Code.Name() == "unique_violation" {
-				switch pqErr.Constraint {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == db.UniqueViolation {
+				switch pgErr.ConstraintName {
 				case "users_pkey":
 					return nil, status.Errorf(codes.AlreadyExists, "user [%s] already exists", arg.Username)
 				case "users_email_key":
@@ -68,7 +71,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 
 		return nil, status.Errorf(codes.Internal, "failed to create user: %s", err)
 	}
-
+	// return &pb.CreateUserResponse{User: convertUserDebug(txResult.User)}, nil
 	return &pb.CreateUserResponse{User: convertUser(txResult.User)}, nil
 }
 

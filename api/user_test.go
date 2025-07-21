@@ -14,18 +14,19 @@ import (
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
 	"github.com/Drolfothesgnir/simplebank/util"
 	"github.com/gin-gonic/gin"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
-func createRandomUser(t *testing.T) (user db.User, password string) {
+func createRandomUser(t *testing.T, role string) (user db.User, password string) {
 	password = util.RandomString(10)
 	hashedPasword, err := util.HashPassword(password)
 	require.NoError(t, err)
 
 	user = db.User{
 		Username:       util.RandomOwner(),
+		Role:           role,
 		HashedPassword: hashedPasword,
 		FullName:       util.RandomOwner(),
 		Email:          util.RandomEmail(),
@@ -66,7 +67,7 @@ func EqCreateUserParams(arg db.CreateUserParams, password string) gomock.Matcher
 
 func TestCreateUser(t *testing.T) {
 
-	user, password := createRandomUser(t)
+	user, password := createRandomUser(t, util.DepositorRole)
 
 	testCases := []struct {
 		name          string
@@ -160,9 +161,9 @@ func TestCreateUser(t *testing.T) {
 				"email":     user.Email,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				err := &pq.Error{
-					Code:       "23505",
-					Constraint: "users_pkey",
+				err := &pgconn.PgError{
+					Code:           db.UniqueViolation,
+					ConstraintName: "users_pkey",
 				}
 				store.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Times(1).Return(db.User{}, err)
 			},
@@ -178,9 +179,9 @@ func TestCreateUser(t *testing.T) {
 				"email":     user.Email,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				err := &pq.Error{
-					Code:       "23505",
-					Constraint: "users_email_key",
+				err := &pgconn.PgError{
+					Code:           db.UniqueViolation,
+					ConstraintName: "users_email_key",
 				}
 				store.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Times(1).Return(db.User{}, err)
 			},
@@ -214,7 +215,7 @@ func TestCreateUser(t *testing.T) {
 
 func TestLoginUser(t *testing.T) {
 
-	user, password := createRandomUser(t)
+	user, password := createRandomUser(t, util.DepositorRole)
 
 	testCases := []struct {
 		name          string
@@ -268,7 +269,7 @@ func TestLoginUser(t *testing.T) {
 				"password": password,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().GetUser(gomock.Any(), gomock.Eq(user.Username)).Times(1).Return(db.User{}, sql.ErrNoRows)
+				store.EXPECT().GetUser(gomock.Any(), gomock.Eq(user.Username)).Times(1).Return(db.User{}, db.ErrRecordNotFound)
 				store.EXPECT().CreateSession(gomock.Any(), gomock.Any()).Times(0)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {

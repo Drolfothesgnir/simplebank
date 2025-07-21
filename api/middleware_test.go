@@ -14,6 +14,7 @@ import (
 
 func TestAuthMiddleware(t *testing.T) {
 	username := util.RandomOwner()
+	role := util.DepositorRole
 
 	testCases := []struct {
 		name          string
@@ -22,7 +23,7 @@ func TestAuthMiddleware(t *testing.T) {
 	}{{
 		name: "OK",
 		setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-			setAuthorizationHeader(t, tokenMaker, authorizationTypeBearer, username, time.Minute, request)
+			setAuthorizationHeader(t, tokenMaker, authorizationTypeBearer, username, role, time.Minute, request)
 		},
 		checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 			require.Equal(t, http.StatusOK, recorder.Code)
@@ -40,7 +41,7 @@ func TestAuthMiddleware(t *testing.T) {
 		{
 			name: "InvalidHeaderFormat",
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				setAuthorizationHeader(t, tokenMaker, "", username, time.Minute, request)
+				setAuthorizationHeader(t, tokenMaker, "", username, role, time.Minute, request)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusUnauthorized, recorder.Code)
@@ -49,7 +50,7 @@ func TestAuthMiddleware(t *testing.T) {
 		{
 			name: "UnsupportedAuthorizationType",
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				setAuthorizationHeader(t, tokenMaker, "unsupported", username, time.Minute, request)
+				setAuthorizationHeader(t, tokenMaker, "unsupported", username, role, time.Minute, request)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusUnauthorized, recorder.Code)
@@ -58,7 +59,7 @@ func TestAuthMiddleware(t *testing.T) {
 		{
 			name: "ExpiredToken",
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				setAuthorizationHeader(t, tokenMaker, authorizationTypeBearer, username, -time.Minute, request)
+				setAuthorizationHeader(t, tokenMaker, authorizationTypeBearer, username, role, -time.Minute, request)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusUnauthorized, recorder.Code)

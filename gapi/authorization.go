@@ -3,6 +3,7 @@ package gapi
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/Drolfothesgnir/simplebank/token"
@@ -14,7 +15,7 @@ const (
 	authorizationTypeBearer = "bearer"
 )
 
-func (server *Server) authorizeUser(ctx context.Context) (*token.Payload, error) {
+func (server *Server) authorizeUser(ctx context.Context, accessibleRoles []string) (*token.Payload, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("missing metadata")
@@ -41,8 +42,11 @@ func (server *Server) authorizeUser(ctx context.Context) (*token.Payload, error)
 
 	payload, err := server.tokenMaker.VerifyToken(accessToken)
 	if err != nil {
-
 		return nil, fmt.Errorf("invalid access token: %s", err)
+	}
+
+	if !slices.Contains(accessibleRoles, payload.Role) {
+		return nil, fmt.Errorf("permission denied: %s", err)
 	}
 
 	return payload, nil

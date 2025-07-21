@@ -254,6 +254,9 @@
         "username": {
           "type": "string"
         },
+        "role": {
+          "type": "string"
+        },
         "fullName": {
           "type": "string"
         },
@@ -267,8 +270,12 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "isEmailVerified": {
+          "type": "boolean"
         }
-      }
+      },
+      "title": "string username = 1;\n string full_name = 2;\n string email = 3;\n google.protobuf.Timestamp password_changed_at = 4;\n google.protobuf.Timestamp created_at = 5;\n bool is_email_verified = 6;"
     },
     "pbVerifyEmailResponse": {
       "type": "object",

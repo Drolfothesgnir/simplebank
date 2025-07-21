@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createVerificationEmail = `-- name: CreateVerificationEmail :one
@@ -27,7 +28,7 @@ type CreateVerificationEmailParams struct {
 }
 
 func (q *Queries) CreateVerificationEmail(ctx context.Context, arg CreateVerificationEmailParams) (VerificationEmail, error) {
-	row := q.db.QueryRowContext(ctx, createVerificationEmail, arg.Username, arg.Email, arg.SecretCode)
+	row := q.db.QueryRow(ctx, createVerificationEmail, arg.Username, arg.Email, arg.SecretCode)
 	var i VerificationEmail
 	err := row.Scan(
 		&i.ID,
@@ -47,7 +48,7 @@ WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetVerificationEmail(ctx context.Context, id int64) (VerificationEmail, error) {
-	row := q.db.QueryRowContext(ctx, getVerificationEmail, id)
+	row := q.db.QueryRow(ctx, getVerificationEmail, id)
 	var i VerificationEmail
 	err := row.Scan(
 		&i.ID,
@@ -71,13 +72,13 @@ RETURNING id, username, email, secret_code, is_used, created_at, expired_at
 `
 
 type UpdateVerificationEmailParams struct {
-	ID     int64          `json:"id"`
-	Email  sql.NullString `json:"email"`
-	IsUsed sql.NullBool   `json:"is_used"`
+	ID     int64       `json:"id"`
+	Email  pgtype.Text `json:"email"`
+	IsUsed pgtype.Bool `json:"is_used"`
 }
 
 func (q *Queries) UpdateVerificationEmail(ctx context.Context, arg UpdateVerificationEmailParams) (VerificationEmail, error) {
-	row := q.db.QueryRowContext(ctx, updateVerificationEmail, arg.ID, arg.Email, arg.IsUsed)
+	row := q.db.QueryRow(ctx, updateVerificationEmail, arg.ID, arg.Email, arg.IsUsed)
 	var i VerificationEmail
 	err := row.Scan(
 		&i.ID,

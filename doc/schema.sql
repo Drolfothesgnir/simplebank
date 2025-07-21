@@ -1,6 +1,6 @@
 -- SQL dump generated using DBML (dbml.dbdiagram.io)
 -- Database: PostgreSQL
--- Generated at: 2025-07-20T09:29:11.143Z
+-- Generated at: 2025-07-21T07:46:32.893Z
 
 CREATE TABLE "sessions" (
   "id" uuid PRIMARY KEY,
@@ -15,6 +15,7 @@ CREATE TABLE "sessions" (
 
 CREATE TABLE "users" (
   "username" varchar PRIMARY KEY,
+  "role" varchar NOT NULL DEFAULT 'depositor',
   "hashed_password" varchar NOT NULL,
   "full_name" varchar NOT NULL,
   "email" varchar UNIQUE NOT NULL,
