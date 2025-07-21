@@ -2,10 +2,11 @@ package servers
 
 import (
 	"context"
-	"net"
+	"errors"
 	"net/http"
 
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
 
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
 	"github.com/Drolfothesgnir/simplebank/gapi"
@@ -17,13 +18,18 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func RunGatewayServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+func RunGatewayServer(
+	ctx context.Context,
+	waitGroup *errgroup.Group,
+	config util.Config,
+	store db.Store,
+	taskDistributor worker.TaskDistributor,
+) {
 	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot create the gRPC gateway server")
 	}
 
-	ctx, cancelFn := context.WithCancel(context.Background())
 	grpcMux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
 			MarshalOptions: protojson.MarshalOptions{
@@ -35,7 +41,6 @@ func RunGatewayServer(config util.Config, store db.Store, taskDistributor worker
 			},
 		}),
 	)
-	defer cancelFn()
 
 	err = pb.RegisterSimpleBankHandlerServer(ctx, grpcMux, server)
 
@@ -54,18 +59,38 @@ func RunGatewayServer(config util.Config, store db.Store, taskDistributor worker
 	swaggerHandler := http.StripPrefix("/swagger/", http.FileServer(statikFS))
 	mux.Handle("/swagger/", swaggerHandler)
 
-	listener, err := net.Listen("tcp", config.HTTPServerAddress)
-	if err != nil {
-		log.Fatal().Err(err).Msg("cannot create listener")
+	httpServer := &http.Server{
+		Handler: gapi.HttpLogger(mux),
+		Addr:    config.HTTPServerAddress,
 	}
 
-	log.Info().Msgf("start HTTP gateway server at %s", listener.Addr().String())
+	waitGroup.Go(func() error {
+		log.Info().Msgf("start HTTP gateway server at %s", httpServer.Addr)
 
-	handler := gapi.HttpLogger(mux)
+		err = httpServer.ListenAndServe()
 
-	err = http.Serve(listener, handler)
+		if err != nil {
+			if errors.Is(err, http.ErrServerClosed) {
+				return nil
+			}
+			log.Error().Err(err).Msg("cannot start HTTP gateway server")
+		}
 
-	if err != nil {
-		log.Fatal().Err(err).Msg("cannot start gRPCe")
-	}
+		return err
+	})
+
+	waitGroup.Go(func() error {
+		<-ctx.Done()
+
+		log.Info().Msg("gateway server: graceful shutdown")
+
+		err = httpServer.Shutdown(context.Background())
+		if err != nil {
+			log.Error().Err(err).Msg("cannot shutdown HTTP server gracfully")
+		}
+
+		log.Info().Msg("gateway server is stopped")
+
+		return err
+	})
 }
