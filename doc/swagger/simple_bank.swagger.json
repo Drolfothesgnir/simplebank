@@ -267,6 +267,9 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "isEmailVerified": {
+          "type": "boolean"
         }
       }
     },
