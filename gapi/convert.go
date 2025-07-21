@@ -13,5 +13,6 @@ func convertUser(dbUser db.User) *pb.User {
 		Email:             dbUser.Email,
 		PasswordChangedAt: timestamppb.New(dbUser.PasswordChangedAt),
 		CreatedAt:         timestamppb.New(dbUser.CreatedAt),
+		IsEmailVerified:   dbUser.IsEmailVerified,
 	}
 }
