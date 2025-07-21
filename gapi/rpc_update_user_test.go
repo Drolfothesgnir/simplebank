@@ -10,6 +10,7 @@ import (
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
 	"github.com/Drolfothesgnir/simplebank/pb"
 	"github.com/Drolfothesgnir/simplebank/token"
+	"github.com/Drolfothesgnir/simplebank/util"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
@@ -20,8 +21,8 @@ import (
 
 func TestUpdateUser(t *testing.T) {
 
-	user, _ := createRandomUser(t)
-	newUser, _ := createRandomUser(t)
+	user, _ := createRandomUser(t, util.DepositorRole)
+	newUser, _ := createRandomUser(t, util.DepositorRole)
 	invalidEmail := "invalid-email"
 	invalidFullName := "123"
 
@@ -51,7 +52,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.NoError(t, err)
@@ -74,7 +75,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, -time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, -time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -95,7 +96,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -116,7 +117,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, "/.123", time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, "/.123", user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -137,7 +138,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -158,7 +159,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -184,7 +185,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -205,7 +206,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)
@@ -226,7 +227,7 @@ func TestUpdateUser(t *testing.T) {
 
 			},
 			setupAuth: func(t *testing.T, tokenMaker token.Maker) context.Context {
-				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, time.Minute)
+				return setAuthorizationHeader(t, tokenMaker, authorizationHeader, authorizationTypeBearer, user.Username, user.Role, time.Minute)
 			},
 			checkResponse: func(t *testing.T, res *pb.UpdateUserResponse, err error) {
 				require.Error(t, err)

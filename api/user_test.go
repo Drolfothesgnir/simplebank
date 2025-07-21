@@ -19,13 +19,14 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func createRandomUser(t *testing.T) (user db.User, password string) {
+func createRandomUser(t *testing.T, role string) (user db.User, password string) {
 	password = util.RandomString(10)
 	hashedPasword, err := util.HashPassword(password)
 	require.NoError(t, err)
 
 	user = db.User{
 		Username:       util.RandomOwner(),
+		Role:           role,
 		HashedPassword: hashedPasword,
 		FullName:       util.RandomOwner(),
 		Email:          util.RandomEmail(),
@@ -66,7 +67,7 @@ func EqCreateUserParams(arg db.CreateUserParams, password string) gomock.Matcher
 
 func TestCreateUser(t *testing.T) {
 
-	user, password := createRandomUser(t)
+	user, password := createRandomUser(t, util.DepositorRole)
 
 	testCases := []struct {
 		name          string
@@ -214,7 +215,7 @@ func TestCreateUser(t *testing.T) {
 
 func TestLoginUser(t *testing.T) {
 
-	user, password := createRandomUser(t)
+	user, password := createRandomUser(t, util.DepositorRole)
 
 	testCases := []struct {
 		name          string

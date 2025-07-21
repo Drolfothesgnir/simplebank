@@ -30,7 +30,8 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	}
 
 	createUserParams := db.CreateUserParams{
-		Username:       req.GetUsername(),
+		Username: req.GetUsername(),
+		// Role:           util.DepositorRole, <-- not used
 		HashedPassword: hashedPassword,
 		FullName:       req.GetFullName(),
 		Email:          req.GetEmail(),
@@ -70,7 +71,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 
 		return nil, status.Errorf(codes.Internal, "failed to create user: %s", err)
 	}
-
+	// return &pb.CreateUserResponse{User: convertUserDebug(txResult.User)}, nil
 	return &pb.CreateUserResponse{User: convertUser(txResult.User)}, nil
 }
 

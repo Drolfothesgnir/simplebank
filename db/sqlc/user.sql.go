@@ -19,7 +19,7 @@ INSERT INTO users (
   email
 ) VALUES (
   $1, $2, $3, $4
-) RETURNING username, hashed_password, full_name, email, password_changed_at, created_at, is_email_verified
+) RETURNING username, hashed_password, full_name, email, password_changed_at, created_at, is_email_verified, role
 `
 
 type CreateUserParams struct {
@@ -45,12 +45,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordChangedAt,
 		&i.CreatedAt,
 		&i.IsEmailVerified,
+		&i.Role,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT username, hashed_password, full_name, email, password_changed_at, created_at, is_email_verified FROM users
+SELECT username, hashed_password, full_name, email, password_changed_at, created_at, is_email_verified, role FROM users
 WHERE username = $1 LIMIT 1
 `
 
@@ -65,6 +66,7 @@ func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
 		&i.PasswordChangedAt,
 		&i.CreatedAt,
 		&i.IsEmailVerified,
+		&i.Role,
 	)
 	return i, err
 }
@@ -72,17 +74,19 @@ func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET 
-  hashed_password = COALESCE($2, hashed_password),
-  password_changed_at = COALESCE($3, password_changed_at),
-  full_name = COALESCE($4, full_name),
-  email = COALESCE($5, email),
-  is_email_verified = COALESCE($6, is_email_verified)
+  role = COALESCE($2, role),
+  hashed_password = COALESCE($3, hashed_password),
+  password_changed_at = COALESCE($4, password_changed_at),
+  full_name = COALESCE($5, full_name),
+  email = COALESCE($6, email),
+  is_email_verified = COALESCE($7, is_email_verified)
 WHERE username = $1
-RETURNING username, hashed_password, full_name, email, password_changed_at, created_at, is_email_verified
+RETURNING username, hashed_password, full_name, email, password_changed_at, created_at, is_email_verified, role
 `
 
 type UpdateUserParams struct {
 	Username          string             `json:"username"`
+	Role              pgtype.Text        `json:"role"`
 	HashedPassword    pgtype.Text        `json:"hashed_password"`
 	PasswordChangedAt pgtype.Timestamptz `json:"password_changed_at"`
 	FullName          pgtype.Text        `json:"full_name"`
@@ -93,6 +97,7 @@ type UpdateUserParams struct {
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, updateUser,
 		arg.Username,
+		arg.Role,
 		arg.HashedPassword,
 		arg.PasswordChangedAt,
 		arg.FullName,
@@ -108,6 +113,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.PasswordChangedAt,
 		&i.CreatedAt,
 		&i.IsEmailVerified,
+		&i.Role,
 	)
 	return i, err
 }
