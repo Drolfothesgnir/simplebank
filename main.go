@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
 
 	db "github.com/Drolfothesgnir/simplebank/db/sqlc"
 	"github.com/Drolfothesgnir/simplebank/mail"
@@ -21,6 +24,12 @@ import (
 	_ "github.com/Drolfothesgnir/simplebank/doc/statik"
 )
 
+var interruptSignals = []os.Signal{
+	os.Interrupt,
+	syscall.SIGTERM,
+	syscall.SIGINT,
+}
+
 func main() {
 	worker.SetupRedisLogger()
 
@@ -33,7 +42,10 @@ func main() {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
-	conn, err := pgxpool.New(context.Background(), config.DBSource)
+	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
+	defer stop()
+
+	conn, err := pgxpool.New(ctx, config.DBSource)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot connect to the database")
 	}
@@ -48,11 +60,18 @@ func main() {
 
 	emailSender := mail.NewGmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword)
 
-	go runTaskProcessor(redisOpts, store, emailSender)
+	waitGroup, ctx := errgroup.WithContext(ctx)
 
-	go servers.RunGatewayServer(config, store, taskDistributor)
+	runTaskProcessor(ctx, waitGroup, redisOpts, store, emailSender)
 
-	servers.RunGrpcServer(config, store, taskDistributor)
+	servers.RunGatewayServer(ctx, waitGroup, config, store, taskDistributor)
+
+	servers.RunGrpcServer(ctx, waitGroup, config, store, taskDistributor)
+
+	err = waitGroup.Wait()
+	if err != nil {
+		log.Fatal().Err(err).Msg("error from wait group")
+	}
 }
 
 func runDBMigration(migrationURL string, dbSource string) {
@@ -68,11 +87,29 @@ func runDBMigration(migrationURL string, dbSource string) {
 	log.Info().Msg("db migrated successfully")
 }
 
-func runTaskProcessor(redisOpts asynq.RedisClientOpt, store db.Store, emailSender mail.EmailSender) {
+func runTaskProcessor(
+	ctx context.Context,
+	waitGroup *errgroup.Group,
+	redisOpts asynq.RedisClientOpt,
+	store db.Store,
+	emailSender mail.EmailSender,
+) {
 	processor := worker.NewRedisTaskProcessor(redisOpts, store, emailSender)
 
 	err := processor.Start()
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to start task processor")
+		log.Error().Err(err).Msg("failed to start task processor")
 	}
+
+	waitGroup.Go(func() error {
+		<-ctx.Done()
+
+		log.Info().Msg("task processor shutdown")
+
+		processor.Shutdown()
+
+		log.Info().Msg("task processor is stopped")
+
+		return nil
+	})
 }
